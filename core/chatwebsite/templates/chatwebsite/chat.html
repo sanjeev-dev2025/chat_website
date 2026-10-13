@@ -1,0 +1,225 @@
+ 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Chat</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 80vh;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 4px 20px #0001;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #2563eb;
+            color: white;
+            padding: 18px;
+        }
+
+        .chat-header h2 {
+            margin: 0 0 5px;
+        }
+
+        #status {
+            font-size: 13px;
+        }
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+        }
+
+        .message {
+            margin-bottom: 14px;
+            max-width: 80%;
+            overflow-wrap: anywhere;
+        }
+
+        .message.own {
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .username {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .bubble {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #e2e8f0;
+            text-align: left;
+        }
+
+        .own .bubble {
+            background: #2563eb;
+            color: white;
+        }
+
+        .chat-form {
+            display: flex;
+            gap: 8px;
+            padding: 14px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        #message-input {
+            flex: 1;
+            min-width: 0;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        button {
+            border: none;
+            background: #2563eb;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="chat-container">
+        <header class="chat-header">
+            <h2>My Chat Room</h2>
+            <div id="status">Connecting...</div>
+        </header>
+
+        <section id="messages" aria-live="polite"></section>
+
+        <form id="chat-form" class="chat-form">
+            <input
+                id="message-input"
+                type="text"
+                placeholder="Type a message..."
+                autocomplete="off"
+                required
+            >
+            <button id="send-button" type="submit" disabled>
+                Send
+            </button>
+        </form>
+    </main>
+<script>
+    const messagesContainer = document.getElementById("messages");
+    const messageInput = document.getElementById("message-input");
+    const chatForm = document.getElementById("chat-form");
+    const sendButton = document.getElementById("send-button");
+    const status = document.getElementById("status");
+
+    // Get the JWT access token saved after login.
+    const token = localStorage.getItem("access");
+
+    if (!token) {
+        status.textContent = "Please log in first.";
+    } else {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const socket = new WebSocket(
+            `${protocol}//${window.location.host}/ws/chat/?token=${encodeURIComponent(token)}`
+        );
+
+        socket.onopen = function () {
+            status.textContent = "Connected";
+            sendButton.disabled = false;
+        };
+
+        socket.onclose = function (event) {
+            status.textContent = "Disconnected";
+            sendButton.disabled = true;
+
+            if (event.code === 4401) {
+                status.textContent = "Authentication failed. Please log in again.";
+            }
+        };
+
+        socket.onerror = function () {
+            status.textContent = "Connection error";
+        };
+
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "history") {
+                messagesContainer.replaceChildren();
+
+                data.messages.forEach(function (message) {
+                    displayMessage(message);
+                });
+            } else if (data.type === "message") {
+                displayMessage(data.message);
+            }
+        };
+
+        function displayMessage(message) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "message";
+
+            const username = document.createElement("div");
+            username.className = "username";
+            username.textContent = message.username;
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+            bubble.textContent = message.message;
+
+            wrapper.appendChild(username);
+            wrapper.appendChild(bubble);
+            messagesContainer.appendChild(wrapper);
+
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        chatForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const message = messageInput.value.trim();
+
+            if (!message || socket.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
+            socket.send(JSON.stringify({ message: message }));
+            messageInput.value = "";
+        });
+    }
+</script>
+</body>
+</html>

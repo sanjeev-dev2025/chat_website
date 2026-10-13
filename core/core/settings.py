@@ -157,11 +157,16 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "noreply@chatapp.local"
 EMAIL_VERIFICATION=None
 
-CHANNEL_LAYERS={
-    "default":{
-        "BACKEND":"channels_redis.core.RedisChannelLayer",
-        "CONFIG":{
-            "hosts":[("localhost",6379)]
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                {
+                    "address": "redis://127.0.0.1:6379",
+                    "socket_timeout": None,
+                }
+            ],
         },
     },
 }

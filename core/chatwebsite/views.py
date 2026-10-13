@@ -23,3 +23,6 @@ class MessageRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView)
 
      def get_queryset(self):
         return Message.objects.filter(user=self.request.user)
+
+def chat_page(request):
+    return render(request, "chatwebsite/chat.html")
