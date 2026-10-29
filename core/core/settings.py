@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
     'dj_rest_auth',
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -156,6 +158,17 @@ ACCOUNT_SIGNUP_FIELDS = [
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "noreply@chatapp.local"
 EMAIL_VERIFICATION=None
+
+# ---------------------------------------------------------------------------
+# CORS — allows the React dev server (port 5173) to call the Django API.
+# In production, replace these with your actual deployed frontend origin(s).
+# ---------------------------------------------------------------------------
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+# Only the login endpoint is accessed via CORS; JWT is used for auth,
+# so we do NOT need CORS_ALLOW_CREDENTIALS = True here.
 
 CHANNEL_LAYERS = {
     "default": {
